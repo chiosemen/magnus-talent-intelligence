@@ -77,3 +77,4 @@ services:
     plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
+ ipAllowList: []  
