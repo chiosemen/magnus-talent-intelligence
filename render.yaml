@@ -19,7 +19,6 @@ services:
         fromService:
           type: redis
           name: mtia-redis
-          property: connectionString
 
   - type: worker
     name: magnus-talent-worker
@@ -39,7 +38,6 @@ services:
         fromService:
           type: redis
           name: mtia-redis
-          property: connectionString
 
   - type: worker
     name: magnus-talent-cli
@@ -69,6 +67,8 @@ services:
 
   - type: redis
     name: mtia-redis
+    plan: free
+    region: oregon
     ipAllowList: []
 
   - type: keyvalue
