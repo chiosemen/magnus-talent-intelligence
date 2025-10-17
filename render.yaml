@@ -1,3 +1,5 @@
+version: "1"
+
 services:
   - type: web
     name: magnus-talent-agent
@@ -60,12 +62,10 @@ services:
   - type: redis
     name: mtia-redis
     ipAllowList: []
-# Exported from Render on 2025-10-17T17:59:00Z
-version: "1"
-services:
-- type: keyvalue
-  name: Magnus_Resume_Bot
-  plan: free
-  region: oregon
-  maxmemoryPolicy: allkeys-lru
-  ipAllowList: []
+
+  - type: keyvalue
+    name: Magnus_Resume_Bot
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
