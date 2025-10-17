@@ -1,9 +1,11 @@
 version: "1"
 
 services:
+  # --- Web Service (Next.js / API Layer) ---
   - type: web
     name: magnus-talent-agent
     env: node
+    plan: free
     buildCommand: corepack enable pnpm && pnpm install --frozen-lockfile && pnpm build
     startCommand: pnpm start
     envVars:
@@ -21,9 +23,11 @@ services:
           name: mtia-redis
           property: connectionString
 
+  # --- Worker (Queue Processor) ---
   - type: worker
     name: magnus-talent-worker
     env: node
+    plan: free
     buildCommand: corepack enable pnpm && pnpm install --frozen-lockfile
     startCommand: pnpm worker
     envVars:
@@ -41,9 +45,11 @@ services:
           name: mtia-redis
           property: connectionString
 
+  # --- CLI Dashboard Worker (Python) ---
   - type: worker
     name: magnus-talent-cli
     env: python
+    plan: free
     buildCommand: pip install -r magnus_talent_cli_dashboard/requirements.txt
     startCommand: python magnus_talent_cli_dashboard/main.py
     envVars:
@@ -66,15 +72,16 @@ services:
       - key: TO_EMAIL
         sync: false
 
+  # --- Redis Service (Internal Cache / Queue Backend) ---
   - type: redis
     name: mtia-redis
     plan: free
     region: oregon
     ipAllowList: []
 
+  # --- Key-Value Service (Lightweight Cache or Token Store) ---
   - type: keyvalue
     name: magnus-cache
     plan: free
     region: oregon
-    maxmemoryPolicy: allkeys-lru
- ipAllowList: []  
+    ipAllowList: []
