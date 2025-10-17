@@ -14,12 +14,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable pnpm
 
       - name: Install deps (web)
         run: |
           cd magnus-talent-agent
-          npm i -g pnpm
-          pnpm install
+          pnpm install --frozen-lockfile
 
       - name: Build (web)
         run: |
@@ -58,5 +61,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Render Deploy (docs)
-        run: echo "Connect repo in Render; render.yaml autodetects services."
+      - name: Deploy Render blueprint
+        uses: render-examples/blueprint-deploy-action@v1
+        with:
+          blueprint: render.yaml
+          api-key: ${{ secrets.RENDER_API_KEY }}

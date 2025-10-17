@@ -1,59 +1,20 @@
 version: "3.9"
+
 services:
   web:
-    build: ./magnus-talent-agent
-    command: ["pnpm", "dev"]
-    ports: ["3000:3000"]
-    environment:
-      NODE_ENV: development
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      REDIS_URL: redis://redis:6379
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      OUTREACH_FROM: ${OUTREACH_FROM}
-    depends_on: [redis]
-    restart: always
-
-  worker:
     build:
       context: ./magnus-talent-agent
       dockerfile: Dockerfile
-    command: ["pnpm", "worker"]
-    environment:
-      NODE_ENV: production
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      REDIS_URL: redis://redis:6379
+    ports: ["3000:3000"]
+    env_file: .env
     depends_on: [redis]
-    restart: always
+
+  worker:
+    build:
+      context: .
+      dockerfile: magnus-talent-worker/Dockerfile
+    env_file: .env
+    depends_on: [redis]
 
   redis:
-    image: redis:7.4-alpine
-    ports: ["6379:6379"]
-    volumes: [redis_data:/data]
-
-  cli:
-    build:
-      context: ./magnus_talent_cli_dashboard
-      dockerfile: Dockerfile
-    command: ["python", "main.py"]
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_KEY: ${SUPABASE_KEY}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      OUTREACH_FROM: ${OUTREACH_FROM}
-      TO_EMAIL: ${TO_EMAIL}
-    depends_on: [redis]
-    restart: unless-stopped
-
-volumes: { redis_data: {} }
+    image: redis:7-alpine

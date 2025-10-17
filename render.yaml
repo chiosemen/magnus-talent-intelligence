@@ -17,6 +17,16 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: INGEST_API_KEY
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
@@ -29,3 +39,12 @@ services:
     plan: free
     region: oregon
     ipAllowList: []
+
+  # --- Keep-alive Cron ---
+  - type: cron
+    name: keepalive-ping
+    env: node
+    plan: free
+    schedule: "*/10 * * * *"
+    startCommand: |
+      curl -fsS ${RENDER_EXTERNAL_URL:-https://magnus-talent-agent.onrender.com}/api/health || true
