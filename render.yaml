@@ -20,68 +20,12 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: mtia-redis
+          name: Magnus_Resume_Bot
           property: connectionString
 
-  # --- Worker (Queue Processor) ---
-  - type: worker
-    name: magnus-talent-worker
-    env: node
-    plan: free
-    buildCommand: corepack enable pnpm && pnpm install --frozen-lockfile
-    startCommand: pnpm worker
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: mtia-redis
-          property: connectionString
-
-  # --- CLI Dashboard Worker (Python) ---
-  - type: worker
-    name: magnus-talent-cli
-    env: python
-    plan: free
-    buildCommand: pip install -r magnus_talent_cli_dashboard/requirements.txt
-    startCommand: python magnus_talent_cli_dashboard/main.py
-    envVars:
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: OUTREACH_FROM
-        sync: false
-      - key: TO_EMAIL
-        sync: false
-
-  # --- Redis Service (Internal Cache / Queue Backend) ---
+  # --- Redis Service (Shared Queue Store) ---
   - type: redis
-    name: mtia-redis
-    plan: free
-    region: oregon
-    ipAllowList: []
-
-  # --- Key-Value Service (Lightweight Cache or Token Store) ---
-  - type: keyvalue
-    name: magnus-cache
+    name: Magnus_Resume_Bot
     plan: free
     region: oregon
     ipAllowList: []
