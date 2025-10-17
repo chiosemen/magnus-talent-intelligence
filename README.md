@@ -61,3 +61,4 @@ magnus-talent-intelligence/
    ├─ AUDIT_REPORT.md
    └─ Claude_Code_Audit_Prompt.txt
 ```
+# magnus-talent-intelligence
