@@ -4,7 +4,7 @@ services:
   - type: web
     name: magnus-talent-agent
     env: node
-    buildCommand: pnpm install && pnpm build
+    buildCommand: corepack enable pnpm && pnpm install --frozen-lockfile && pnpm build
     startCommand: pnpm start
     envVars:
       - key: NODE_ENV
@@ -19,11 +19,12 @@ services:
         fromService:
           type: redis
           name: mtia-redis
+          property: connectionString
 
   - type: worker
     name: magnus-talent-worker
     env: node
-    buildCommand: pnpm install
+    buildCommand: corepack enable pnpm && pnpm install --frozen-lockfile
     startCommand: pnpm worker
     envVars:
       - key: NODE_ENV
@@ -38,12 +39,14 @@ services:
         fromService:
           type: redis
           name: mtia-redis
+          property: connectionString
 
   - type: worker
     name: magnus-talent-cli
     env: python
-    buildCommand: cd magnus_talent_cli_dashboard && pip install -r requirements.txt
-    startCommand: cd magnus_talent_cli_dashboard && python main.py
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    workingDirectory: magnus_talent_cli_dashboard
     envVars:
       - key: OPENAI_API_KEY
         sync: false
@@ -53,9 +56,15 @@ services:
         sync: false
       - key: SMTP_HOST
         sync: false
+      - key: SMTP_PORT
+        sync: false
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
+        sync: false
+      - key: OUTREACH_FROM
+        sync: false
+      - key: TO_EMAIL
         sync: false
 
   - type: redis
