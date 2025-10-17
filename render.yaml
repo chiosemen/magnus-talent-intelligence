@@ -44,9 +44,8 @@ services:
   - type: worker
     name: magnus-talent-cli
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    workingDirectory: magnus_talent_cli_dashboard
+    buildCommand: pip install -r magnus_talent_cli_dashboard/requirements.txt
+    startCommand: python magnus_talent_cli_dashboard/main.py
     envVars:
       - key: OPENAI_API_KEY
         sync: false
