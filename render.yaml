@@ -18,7 +18,7 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: Magnus_Resume_Bot
+          name: mtia-redis
           property: connectionString
 
   - type: worker
@@ -38,14 +38,14 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: Magnus_Resume_Bot
+          name: mtia-redis
           property: connectionString
 
   - type: worker
     name: magnus-talent-cli
     env: python
-    buildCommand: cd magnus_talent_cli_dashboard && pip install -r requirements.txt
-    startCommand: cd magnus_talent_cli_dashboard && python main.py
+    buildCommand: pip install -r magnus_talent_cli_dashboard/requirements.txt
+    startCommand: python magnus_talent_cli_dashboard/main.py
     envVars:
       - key: OPENAI_API_KEY
         sync: false
@@ -67,10 +67,13 @@ services:
         sync: false
 
   - type: redis
-    name: Magnus_Resume_Bot
+    name: mtia-redis
+    plan: free
+    region: oregon
+    ipAllowList: []
+
+  - type: keyvalue
+    name: magnus-cache
     plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
-plan: free
-region: oregon
