@@ -19,7 +19,7 @@ services:
         fromService:
           type: redis
           name: Magnus_Resume_Bot
-          property: connectionString   # ✅ Correct Redis property
+          property: connectionString
 
   - type: worker
     name: magnus-talent-worker
@@ -39,7 +39,7 @@ services:
         fromService:
           type: redis
           name: Magnus_Resume_Bot
-          property: connectionString   # ✅ Correct Redis property
+          property: connectionString
 
   - type: worker
     name: magnus-talent-cli
@@ -66,10 +66,11 @@ services:
       - key: TO_EMAIL
         sync: false
 
-  # ✅ Correctly renamed Redis service block
   - type: redis
     name: Magnus_Resume_Bot
     plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
+plan: free
+region: oregon
