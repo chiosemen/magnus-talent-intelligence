@@ -1,0 +1,62 @@
+name: Deploy Magnus Talent Intelligence
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (web)
+        run: |
+          cd magnus-talent-agent
+          npm i -g pnpm
+          pnpm install
+
+      - name: Build (web)
+        run: |
+          cd magnus-talent-agent
+          pnpm run build
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify CLI
+        run: |
+          cd magnus_talent_cli_dashboard
+          pip install -r requirements.txt
+          python -m compileall .
+
+  deploy-web:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./magnus-talent-agent
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+  deploy-render:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render Deploy (docs)
+        run: echo "Connect repo in Render; render.yaml autodetects services."

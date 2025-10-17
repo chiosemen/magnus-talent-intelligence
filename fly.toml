@@ -1,0 +1,30 @@
+app = "magnus-talent-intelligence"
+primary_region = "iad"
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+NODE_ENV = "production"
+REDIS_URL = "redis://mtia-redis.internal:6379"
+
+[[services]]
+  internal_port = 3000
+  processes = ["web"]
+  protocol = "tcp"
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+[[services]]
+  processes = ["worker"]
+  internal_port = 6379
+  protocol = "tcp"
+  autostart = true
+  auto_stop_machines = false

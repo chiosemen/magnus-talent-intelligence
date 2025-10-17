@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: magnus-talent-agent
+    env: node
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mtia-redis
+
+  - type: worker
+    name: magnus-talent-worker
+    env: node
+    buildCommand: pnpm install
+    startCommand: pnpm worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mtia-redis
+
+  - type: worker
+    name: magnus-talent-cli
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    workingDirectory: magnus_talent_cli_dashboard
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+
+  - type: redis
+    name: mtia-redis
+    ipAllowList: []

@@ -1,0 +1,8 @@
+Use this prompt in Claude Code / Cursor to audit and dockerize:
+
+[Claude Code Prompt]
+(1) Audit Next.js + BullMQ + Supabase web app and Python CLI.
+(2) Propose Dockerfiles and docker-compose with Redis + web + worker + cli.
+(3) Add CI/CD plan (GitHub Actions) and rate-limiting/error handling.
+(4) Produce a final report + patches.
+See repository structure at root.
