@@ -32,32 +32,65 @@ ${resume}`;
   catch { return { tailored_resume: txt, cover_letter: "See attached tailored resume.", tokens_used: 0 }; }
 }
 
-export const worker = new Worker('mtia:pipeline', async (job: Job) => {
+async function handleJob(job: Job) {
   if (job.name === 'parse_jd') {
     const jd = job.data as JDInput;
     const { data: jdRow, error: jdErr } = await supabase
       .from('job_descriptions')
       .insert({ company: jd.company, role: jd.role, location: jd.location, jd_text: jd.jd_text, source: jd.source })
-      .select().single();
+      .select()
+      .single();
     if (jdErr) throw jdErr;
-    const { data: resumeRow } = await supabase.from('resumes').select('*').order('created_at', { ascending: false }).limit(1).single();
-    const resumeText = resumeRow?.content || '';
+    const { data: resumeRow, error: resumeErr } = await supabase
+      .from('resumes')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (resumeErr) throw resumeErr;
+    const resumeText = resumeRow?.content ?? '';
     await job.update({ ...jd, jd_id: jdRow.id, resume_id: resumeRow?.id, resumeText });
-    await job.queue.add('score_fit', { jd_id: jdRow.id, jd_text: jd.jd_text, resume_id: resumeRow?.id, resumeText });
+    await job.queue.add('score_fit', { jd_id: jdRow.id, jd_text: jd.jd_text, resume_id: resumeRow?.id, resumeText }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: true,
+      removeOnFail: true
+    });
   }
+
   if (job.name === 'score_fit') {
     const { jd_id, jd_text, resume_id, resumeText } = job.data as any;
     const match = await naiveKeywordScore(jd_text, resumeText);
     await supabase.from('matches').insert({ jd_id, resume_id, fit_score: match.fit_score, keywords: match.keywords });
-    await job.queue.add('rewrite_resume', { jd_id, jd_text, resume_id, resumeText });
+    await job.queue.add('rewrite_resume', { jd_id, jd_text, resume_id, resumeText }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: true,
+      removeOnFail: true
+    });
   }
+
   if (job.name === 'rewrite_resume') {
     const { jd_id, jd_text, resume_id, resumeText } = job.data as any;
     const rewrite = await rewriteWithOpenAI(jd_text, resumeText);
     await supabase.from('rewrites').insert({
-      jd_id, resume_id, tailored_resume: rewrite.tailored_resume, cover_letter: rewrite.cover_letter, tokens_used: rewrite.tokens_used || null
+      jd_id,
+      resume_id,
+      tailored_resume: rewrite.tailored_resume,
+      cover_letter: rewrite.cover_letter,
+      tokens_used: rewrite.tokens_used || null
     });
   }
-}, { connection });
+}
 
-console.log("MTIA worker running. Queue: mtia:pipeline");
+const globalWithWorker = globalThis as typeof globalThis & { mtiaWorker?: Worker };
+
+if (!globalWithWorker.mtiaWorker) {
+  globalWithWorker.mtiaWorker = new Worker('mtia:pipeline', handleJob, {
+    connection,
+    settings: { backoffStrategies: {} }
+  });
+  console.log("MTIA worker running. Queue: mtia:pipeline");
+}
+
+export const worker = globalWithWorker.mtiaWorker;
