@@ -2,9 +2,12 @@ import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 import { supabase } from './supabase';
 import { openai } from './openai';
+import { queues } from './redis';
 import type { JDInput, MatchResult, RewritePayload } from '@/types';
 
-const connection = new IORedis(process.env.REDIS_URL!);
+const connection = new IORedis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null
+});
 
 async function naiveKeywordScore(text: string, resume: string): Promise<MatchResult> {
   const words = Array.from(new Set(text.toLowerCase().match(/[a-z0-9\+\#\.\-]{3,}/g) || []));
@@ -49,8 +52,7 @@ async function handleJob(job: Job) {
       .maybeSingle();
     if (resumeErr) throw resumeErr;
     const resumeText = resumeRow?.content ?? '';
-    await job.update({ ...jd, jd_id: jdRow.id, resume_id: resumeRow?.id, resumeText });
-    await job.queue.add('score_fit', { jd_id: jdRow.id, jd_text: jd.jd_text, resume_id: resumeRow?.id, resumeText }, {
+    await queues.pipeline.add('score_fit', { jd_id: jdRow.id, jd_text: jd.jd_text, resume_id: resumeRow?.id, resumeText }, {
       attempts: 3,
       backoff: { type: 'exponential', delay: 1000 },
       removeOnComplete: true,
@@ -62,7 +64,7 @@ async function handleJob(job: Job) {
     const { jd_id, jd_text, resume_id, resumeText } = job.data as any;
     const match = await naiveKeywordScore(jd_text, resumeText);
     await supabase.from('matches').insert({ jd_id, resume_id, fit_score: match.fit_score, keywords: match.keywords });
-    await job.queue.add('rewrite_resume', { jd_id, jd_text, resume_id, resumeText }, {
+    await queues.pipeline.add('rewrite_resume', { jd_id, jd_text, resume_id, resumeText }, {
       attempts: 3,
       backoff: { type: 'exponential', delay: 1000 },
       removeOnComplete: true,
@@ -86,11 +88,8 @@ async function handleJob(job: Job) {
 const globalWithWorker = globalThis as typeof globalThis & { mtiaWorker?: Worker };
 
 if (!globalWithWorker.mtiaWorker) {
-  globalWithWorker.mtiaWorker = new Worker('mtia:pipeline', handleJob, {
-    connection,
-    settings: { backoffStrategies: {} }
-  });
-  console.log("MTIA worker running. Queue: mtia:pipeline");
+  globalWithWorker.mtiaWorker = new Worker('mtia-pipeline', handleJob, { connection });
+  console.log("MTIA worker running. Queue: mtia-pipeline");
 }
 
 export const worker = globalWithWorker.mtiaWorker;
